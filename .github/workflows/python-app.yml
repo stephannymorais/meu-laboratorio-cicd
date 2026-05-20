@@ -1,0 +1,72 @@
+name: Pipeline CI-CD FastAPI
+
+# 1. Dizemos ao GitHub para monitorar as duas branches importantes
+on:
+  push:
+    branches:
+      - develop
+      - main
+
+# 2. Criamos uma variável global para o nome da imagem (Dica do Lab)
+env:
+  IMAGE_NAME: api-fastapi-startup
+
+jobs:
+  # ==================== ETAPA DE BUILD ====================
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar o Python na máquina do GitHub
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Instalar dependências da API
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Construir a Imagem Docker (Empacotamento)
+        run: |
+          docker build -t ${{ env.IMAGE_NAME }}:latest .
+
+  # ==================== ETAPA DE HOMOLOGAÇÃO ====================
+  deploy_homologacao:
+    needs: build
+    # Só executa se o envio foi feito para a branch 'develop'
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Automático em Homologação
+        run: |
+          echo "Efetuando deploy automático na porta 8080..."
+          # Aqui entram os comandos para rodar o container no servidor de teste
+
+  # ==================== ETAPA DE PRODUÇÃO ====================
+  deploy_producao:
+    needs: build
+    # Só executa se o envio foi feito para a branch 'main'
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    # Vincula este trabalho à trava de aprovação que criamos no Passo 3
+    environment:
+      name: producao
+
+    steps:
+      - name: Baixar o código para o deploy
+        uses: actions/checkout@v4
+
+      - name: Conectar no Servidor de Produção via SSH e Atualizar
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "Conexão estabelecida com sucesso!"
+            echo "Atualizando a API em Produção com a imagem ${{ env.IMAGE_NAME }}"
+            # Comandos para rodar a aplicação na infraestrutura de produção
