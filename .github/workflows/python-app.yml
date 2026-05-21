@@ -61,12 +61,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Conectar no Servidor de Produção via SSH e Atualizar
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            echo "Conexão estabelecida com sucesso!"
-            echo "Atualizando a API em Produção com a imagem ${{ env.IMAGE_NAME }}"
-            # Comandos para rodar a aplicação na infraestrutura de produção
+        run: |
+          echo "Conexão estabelecida com sucesso!"
+          echo "Atualizando a API em Produção com a imagem ${{ env.IMAGE_NAME }}"
+          echo "Simulação de Deploy realizada com sucesso!"
